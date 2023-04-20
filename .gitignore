@@ -1,0 +1,19 @@
+*.js
+!jest.config.js
+*.d.ts
+cdk/node_modules
+
+# CDK asset staging directory
+cdk/.cdk.staging
+cdk/cdk.out
+*.bkp
+*.dtmp
+
+lordlaser-throttle
+lordlaser-throttle.zip
+src/throttle-lambda/throttle-lambda
+src/api-lambda/api-lambda
+lordlaser-api.zip
+
+web/node_modules
+web/build
