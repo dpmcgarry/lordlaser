@@ -3,8 +3,8 @@ import { CodeBuildStep, CodePipeline, CodePipelineSource } from 'aws-cdk-lib/pip
 import { Construct } from 'constructs';
 import { LordLaserProdStage } from './lordlaser-prod-stage';
 import { GenerateCodestarARN, GenerateACMCertificateARN, LordLaserConstants } from '../bin/lordlaser-constants';
-import { Bucket, BucketEncryption } from 'aws-cdk-lib/aws-s3';
-import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { BlockPublicAccess, Bucket, BucketEncryption } from 'aws-cdk-lib/aws-s3';
+import { Effect, PolicyStatement, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 
 export interface LordLaserStackProps extends StackProps {
@@ -26,6 +26,7 @@ export class LordLaserStack extends Stack {
 
         const customArtifactBucket = new Bucket(this, 'LordLaser-ArtifactBucket', {
             encryption: BucketEncryption.S3_MANAGED,
+            blockPublicAccess: BlockPublicAccess.BLOCK_ALL
         });
 
         new StringParameter(this, 'LordLaser-ArtifactBucketParam', {
@@ -94,10 +95,10 @@ export class LordLaserStack extends Stack {
             buildEnvironment: {
                 environmentVariables: {
                     ArtifactBucket: { value: customArtifactBucket.bucketName },
-                    ApiArtifact:{value: props.apiArtifact},
-                    ApiBinary:{value:props.apiName},
-                    ThrottleArtifact:{value: props.throttleArtifact},
-                    ThrottleBinary: {value: props.throttleName},
+                    ApiArtifact: { value: props.apiArtifact },
+                    ApiBinary: { value: props.apiName },
+                    ThrottleArtifact: { value: props.throttleArtifact },
+                    ThrottleBinary: { value: props.throttleName },
                     UIPrefix: { value: props.uiBucketPrefix },
                 }
             },

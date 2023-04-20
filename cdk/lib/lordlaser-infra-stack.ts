@@ -2,7 +2,7 @@ import { Duration, Size, Stack, StackProps } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { aws_pinpoint as pinpoint } from 'aws-cdk-lib';
 import { Subscription, SubscriptionProtocol, Topic } from "aws-cdk-lib/aws-sns";
-import { Bucket } from "aws-cdk-lib/aws-s3";
+import { BlockPublicAccess, Bucket, BucketEncryption } from "aws-cdk-lib/aws-s3";
 import { CfnDeliveryStream } from "aws-cdk-lib/aws-kinesisfirehose";
 import { Effect, PolicyStatement, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { AttributeType, BillingMode, Table } from "aws-cdk-lib/aws-dynamodb";
@@ -11,9 +11,11 @@ import { SnsDestination } from "aws-cdk-lib/aws-lambda-destinations";
 import { SnsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { RetentionDays } from "aws-cdk-lib/aws-logs";
 import { StringParameter } from "aws-cdk-lib/aws-ssm";
-import { AwsIntegration, CognitoUserPoolsAuthorizer, EndpointType, LambdaIntegration, RestApi, SecurityPolicy } from "aws-cdk-lib/aws-apigateway";
+import { CognitoUserPoolsAuthorizer, EndpointType, LambdaIntegration, RestApi, SecurityPolicy } from "aws-cdk-lib/aws-apigateway";
 import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
 import { UserPool } from "aws-cdk-lib/aws-cognito";
+import { CloudFrontAllowedMethods, CloudFrontWebDistribution, HttpVersion, OriginAccessIdentity,
+    OriginProtocolPolicy, SecurityPolicyProtocol, SourceConfiguration, ViewerCertificate } from "aws-cdk-lib/aws-cloudfront";
 
 export interface InfraStackProps extends StackProps {
     throttleArtifactKey: string;
@@ -55,7 +57,8 @@ export class LordLaserInfraStack extends Stack {
         });
 
         const analyticsBucket = new Bucket(this, 'LordLaserAnalyticsBucket', {
-
+            encryption: BucketEncryption.S3_MANAGED,
+            blockPublicAccess: BlockPublicAccess.BLOCK_ALL
         });
 
         const kinesisRole = new Role(this, 'LordLaserKinesisRole', {
@@ -180,71 +183,11 @@ export class LordLaserInfraStack extends Stack {
                 types: [EndpointType.REGIONAL]
             },
             cloudWatchRole: true,
-            binaryMediaTypes: ["*/*"],
-            minCompressionSize: Size.bytes(0),
+            minCompressionSize: Size.bytes(500),
         });
-
-        const apiGatewayRole = new Role(this, 'ApiGWS3Role', {
-            assumedBy: new ServicePrincipal('apigateway.amazonaws.com')
-        });
-
-        const s3ReadPolicy = new PolicyStatement({
-            effect: Effect.ALLOW,
-            actions: [
-                "s3:Get*",
-                "s3:List*"
-            ],
-            resources: [
-                lambdaArtifactBucket.bucketArn,
-                lambdaArtifactBucket.bucketArn + "/*"
-            ]
-        });
-
-        apiGatewayRole.addToPolicy(s3ReadPolicy);
 
         const lambdaIntegration = new LambdaIntegration(apiFunction);
-        const s3Integration = new AwsIntegration({
-            service: "s3",
-            integrationHttpMethod: "GET",
-            path: `${lambdaArtifactBucketName}/${props.uiBucketPrefix}/{folder}/{key}`,
-            region: this.region,
-            options: {
-                credentialsRole: apiGatewayRole,
-                integrationResponses: [
-                    {
-                        statusCode: "200",
-                        responseParameters: {
-                            "method.response.header.Content-Type": "integration.response.header.Content-Type",
-                        }
-                    }
-                ],
-                requestParameters: {
-                    "integration.request.path.folder": "method.request.path.folder",
-                    "integration.request.path.key": "method.request.path.key",
-                }
-            }
-        })
 
-        api.root
-            .addResource("{folder}")
-            .addResource("{key}")
-            .addMethod('GET', s3Integration, {
-                //authorizer: apiAuth,
-                //authorizationType: AuthorizationType.COGNITO
-                methodResponses: [
-                    {
-                        statusCode: "200",
-                        responseParameters: {
-                            "method.response.header.Content-Type": true,
-                        },
-                    },
-                ],
-                requestParameters: {
-                    "method.request.path.folder": true,
-                    "method.request.path.key": true,
-                    "method.request.header.Content-Type": true,
-                },
-            });
 
         const apiRoute = api.root.addResource('api');
         apiRoute.addMethod('GET', lambdaIntegration);
@@ -259,6 +202,68 @@ export class LordLaserInfraStack extends Stack {
             certificate: Certificate.fromCertificateArn(this, 'ApiCert', props.apiCertArn),
             domainName: props.apiDomain,
             securityPolicy: SecurityPolicy.TLS_1_2
+        });
+        // Creates an origin access identity which allows CloudFront to access non-public S3 buckets
+        const originAccessIdentity = new OriginAccessIdentity(this, 'UIBucketORI');
+
+        // Grants the origin access identity the permissions to read from the bucket
+        lambdaArtifactBucket.grantRead(originAccessIdentity.grantPrincipal);
+
+        // The origin configuration for our S3 bucket hosting the UI
+        const s3OriginConfig: SourceConfiguration = {
+            s3OriginSource: { 
+                s3BucketSource: lambdaArtifactBucket,
+                originPath: '/' + props.uiBucketPrefix,
+                originAccessIdentity 
+            },
+            behaviors: [{
+                isDefaultBehavior: true,
+            }],
+        };
+
+        // The origin configuration for the api
+        const apiOriginConfig: SourceConfiguration = {
+            customOriginSource: {
+                domainName: props.apiDomain,
+                originProtocolPolicy: OriginProtocolPolicy.HTTPS_ONLY,
+                originHeaders: {
+                    /**
+                   * Pass along the appropriate signing region so that the SigV4 signer knows which region to
+                   * generate the signature against
+                   */
+                    'x-signing-region': this.region,
+                }
+            },
+            behaviors: [
+                {
+                    allowedMethods: CloudFrontAllowedMethods.ALL,
+                    forwardedValues: { headers: ['Accept', 'Referer', 'Authorization', 'Content-Type', 'x-forwarded-user'], queryString: true },
+                    pathPattern: '/api*',
+                    maxTtl: Duration.seconds(0), // Don't cache the API responses
+                    minTtl: Duration.seconds(0), // Don't cache the API responses
+                    defaultTtl: Duration.seconds(0), // Don't cache the API responses
+                },
+            ],
+        };
+
+        const webCertificate = Certificate.fromCertificateArn(this, 'WebUICertificate', props.webCertArn)
+
+        const viewerCertificate = ViewerCertificate.fromAcmCertificate(webCertificate, {
+            aliases: [props.webDomain],
+            securityPolicy: SecurityPolicyProtocol.TLS_V1_2_2021,
+        });
+
+
+        new CloudFrontWebDistribution(this, 'LordLaserDistribution', {
+            originConfigs: [s3OriginConfig, apiOriginConfig],
+            viewerCertificate: viewerCertificate,
+            defaultRootObject: "index.html",
+            httpVersion: HttpVersion.HTTP2_AND_3,
+            loggingConfig: {
+                bucket: analyticsBucket,
+                includeCookies: true,
+                prefix: 'cloudfront/'
+            }
         });
     }
 }

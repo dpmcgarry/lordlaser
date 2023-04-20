@@ -6,7 +6,7 @@ export class LordLaserConstants {
 
     // Set this to the guid of your codestar connection
     public static CODESTAR_CONNECTION_GUID = "db3ff80d-9284-41fa-8e27-dc4d16975ba6";
-    
+
     // Set this to the public DNS to use for your website
     public static WEB_DNS = "lordlaser.org";
 
