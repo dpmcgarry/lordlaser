@@ -13,6 +13,7 @@ lordlaser-throttle
 lordlaser-throttle.zip
 src/throttle-lambda/throttle-lambda
 src/api-lambda/api-lambda
+src/api-lambda/lordlaser-api
 lordlaser-api.zip
 
 web/node_modules

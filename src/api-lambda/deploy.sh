@@ -8,9 +8,6 @@ done
 if [ -z "$profile" ]; then
     profile="default"
 fi
-echo "Username: $username";
-echo "Age: $age";
-echo "Full Name: $fullname";
 ZIPNAME=lordlaser-api.zip
 BINNAME=lordlaser-api
 FUNCTION=LordLaserApi
