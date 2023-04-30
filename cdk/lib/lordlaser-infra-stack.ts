@@ -16,6 +16,7 @@ import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
 import { UserPool } from "aws-cdk-lib/aws-cognito";
 import { CloudFrontAllowedMethods, CloudFrontWebDistribution, HttpVersion, OriginAccessIdentity,
     OriginProtocolPolicy, SecurityPolicyProtocol, SourceConfiguration, ViewerCertificate } from "aws-cdk-lib/aws-cloudfront";
+import { GenerateACMCertificateARN } from "../bin/lordlaser-constants";
 
 export interface InfraStackProps extends StackProps {
     throttleArtifactKey: string;
@@ -24,14 +25,14 @@ export interface InfraStackProps extends StackProps {
     apiName: string;
     messageTableName: string;
     artifactBucketParamName: string;
-    apiCertArn: string;
-    apiDomain: string;
     throttleFunctionName: string;
     apiFunctionName: string;
     throttleTableName: string;
     uiBucketPrefix: string;
-    webCertArn: string;
-    webDomain: string;
+    webCertParamName: string;
+    webDomainParamName: string;
+    apiCertParamName: string;
+    apiDomainParamName: string;
 }
 
 export class LordLaserInfraStack extends Stack {
@@ -40,6 +41,26 @@ export class LordLaserInfraStack extends Stack {
 
         const lambdaArtifactBucketName = StringParameter.fromStringParameterAttributes(this, 'LordLaserLambdaArtifactParameterBucketName', {
             parameterName: props.artifactBucketParamName,
+        }).stringValue
+
+        const webCertGuid = StringParameter.fromStringParameterAttributes(this, 'WebCertGuidParam', {
+            parameterName: props.webCertParamName,
+        }).stringValue
+
+        const webCertArn = GenerateACMCertificateARN(this.account, this.region, webCertGuid);
+
+        const webDomain = StringParameter.fromStringParameterAttributes(this, 'WebDomainParam', {
+            parameterName: props.webDomainParamName,
+        }).stringValue
+
+        const apiCertGuid = StringParameter.fromStringParameterAttributes(this, 'ApiCertGuidParam', {
+            parameterName: props.apiCertParamName,
+        }).stringValue
+
+        const apiCertArn = GenerateACMCertificateARN(this.account, this.region, apiCertGuid);
+
+        const apiDomain = StringParameter.fromStringParameterAttributes(this, 'ApiDomainParam', {
+            parameterName: props.apiDomainParamName,
         }).stringValue
 
         const lambdaArtifactBucket = Bucket.fromBucketName(this, 'LordLaserLambdaArtifactBucket', lambdaArtifactBucketName);
@@ -198,9 +219,11 @@ export class LordLaserInfraStack extends Stack {
         const rssRoute = api.root.addResource('rss');
         rssRoute.addMethod('GET', lambdaIntegration);
 
+        const apiCertificate = Certificate.fromCertificateArn(this, 'ApiCertificate', apiCertArn);
+
         api.addDomainName('LordLaserAPIDomainName', {
-            certificate: Certificate.fromCertificateArn(this, 'ApiCert', props.apiCertArn),
-            domainName: props.apiDomain,
+            certificate: apiCertificate,
+            domainName: apiDomain,
             securityPolicy: SecurityPolicy.TLS_1_2
         });
         // Creates an origin access identity which allows CloudFront to access non-public S3 buckets
@@ -224,7 +247,7 @@ export class LordLaserInfraStack extends Stack {
         // The origin configuration for the api
         const apiOriginConfig: SourceConfiguration = {
             customOriginSource: {
-                domainName: props.apiDomain,
+                domainName: apiDomain,
                 originProtocolPolicy: OriginProtocolPolicy.HTTPS_ONLY,
                 originHeaders: {
                     /**
@@ -246,10 +269,10 @@ export class LordLaserInfraStack extends Stack {
             ],
         };
 
-        const webCertificate = Certificate.fromCertificateArn(this, 'WebUICertificate', props.webCertArn)
+        const webCertificate = Certificate.fromCertificateArn(this, 'WebUICertificate', webCertArn);
 
         const viewerCertificate = ViewerCertificate.fromAcmCertificate(webCertificate, {
-            aliases: [props.webDomain],
+            aliases: [webDomain],
             securityPolicy: SecurityPolicyProtocol.TLS_V1_2_2021,
         });
 

@@ -9,14 +9,14 @@ export interface ProdStageProps extends StageProps {
     apiName: string;
     messageTableName: string;
     artifactBucketParamName: string;
-    apiCertArn: string;
-    apiDomain: string;
     apiFunctionName: string;
     throttleFunctionName: string;
     throttleTableName: string;
     uiBucketPrefix: string;
-    webCertArn: string;
-    webDomain: string;
+    webCertParamName: string;
+    webDomainParamName: string;
+    apiCertParamName: string;
+    apiDomainParamName: string;
 }
 
 export class LordLaserProdStage extends Stage {
@@ -31,14 +31,14 @@ export class LordLaserProdStage extends Stage {
             apiName: props.apiName,
             messageTableName: props.messageTableName,
             artifactBucketParamName: props.artifactBucketParamName,
-            apiCertArn: props.apiCertArn,
-            apiDomain: props.apiDomain,
             apiFunctionName: props.apiFunctionName,
             throttleFunctionName: props.throttleFunctionName,
             throttleTableName: props.throttleTableName,
             uiBucketPrefix: props.uiBucketPrefix,
-            webCertArn: props.webCertArn,
-            webDomain: props.webDomain,
+            webCertParamName: props.webCertParamName,
+            webDomainParamName: props.webDomainParamName,
+            apiCertParamName: props.apiCertParamName,
+            apiDomainParamName: props.apiDomainParamName,
             terminationProtection: true
         });
     }

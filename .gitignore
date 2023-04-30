@@ -18,3 +18,5 @@ lordlaser-api.zip
 
 web/node_modules
 web/build
+
+!setupProxy.js

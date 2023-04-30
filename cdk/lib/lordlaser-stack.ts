@@ -4,7 +4,7 @@ import { Construct } from 'constructs';
 import { LordLaserProdStage } from './lordlaser-prod-stage';
 import { GenerateCodestarARN, GenerateACMCertificateARN, LordLaserConstants } from '../bin/lordlaser-constants';
 import { BlockPublicAccess, Bucket, BucketEncryption } from 'aws-cdk-lib/aws-s3';
-import { Effect, PolicyStatement, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
+import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 
 export interface LordLaserStackProps extends StackProps {
@@ -120,9 +120,6 @@ export class LordLaserStack extends Stack {
 
         const prodWave = pipeline.addWave('Prod');
 
-        const apiCertArn = GenerateACMCertificateARN(this.account, this.region, LordLaserConstants.API_ACM_CERTIFICATE_GUID);
-        const webCertArn = GenerateACMCertificateARN(this.account, this.region, LordLaserConstants.WEB_ACM_CERTIFICATE_GUID);
-
         const prodStage = new LordLaserProdStage(this, 'LordLaser-Prod', {
             artifactBucketParamName: props.artifactBucketParamName,
             throttleArtifactKey: props.throttleArtifact,
@@ -130,14 +127,14 @@ export class LordLaserStack extends Stack {
             apiArtifactKey: props.apiArtifact,
             apiName: props.apiName,
             messageTableName: props.messageTableName,
-            apiCertArn: apiCertArn,
-            apiDomain: LordLaserConstants.API_DNS,
             apiFunctionName: LordLaserConstants.API_LAMBDA_NAME,
             throttleFunctionName: LordLaserConstants.THROTTLE_LAMBDA_NAME,
             throttleTableName: LordLaserConstants.THROTTLE_TABLE_NAME,
             uiBucketPrefix: props.uiBucketPrefix,
-            webCertArn: webCertArn,
-            webDomain: LordLaserConstants.WEB_DNS
+            webCertParamName: LordLaserConstants.WEB_ACM_PARAM,
+            webDomainParamName: LordLaserConstants.WEB_DNS_PARAM,
+            apiCertParamName: LordLaserConstants.API_ACM_PARAM,
+            apiDomainParamName: LordLaserConstants.API_DNS_PARAM,
         });
 
         prodWave.addStage(prodStage, {

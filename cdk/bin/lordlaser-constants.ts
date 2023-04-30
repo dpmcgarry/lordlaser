@@ -4,17 +4,11 @@ export class LordLaserConstants {
     public static GITHUB_REPO = "dpmcgarry/lordlaser";
     public static GITHUB_BRANCH = "main";
 
-    // Set this to the public DNS to use for your website
-    public static WEB_DNS = "lordlaser.org";
-
-    // Set this to the guid of the ACM cert for your api DNS
-    public static WEB_ACM_CERTIFICATE_GUID = "713a080a-8b13-4446-9959-a59d543ef0c7";
-
     // Set this to the public DNS to use for your api
-    public static API_DNS = "api.lordlaser.org";
+    // public static API_DNS = "api.lordlaser.org";
 
     // Set this to the guid of the ACM cert for your api DNS
-    public static API_ACM_CERTIFICATE_GUID = "49410fb0-e8e7-4aa4-854f-941c2d00ed58";
+    // public static API_ACM_CERTIFICATE_GUID = "49410fb0-e8e7-4aa4-854f-941c2d00ed58";
 
     // You shouldn't need to change these values to fork this repo
     public static API_EXEC_NAME = "lordlaser-api";
@@ -28,6 +22,10 @@ export class LordLaserConstants {
     public static THROTTLE_ARTIFACT_NAME = "lordlaser-throttle.zip";
     public static THROTTLE_TABLE_NAME = "lordlaser-throttles";
     public static CODESTAR_GUID_PARAM = "GitHubCodeStarGuid";
+    public static WEB_DNS_PARAM = "LordLaserWebDns";
+    public static WEB_ACM_PARAM = "LordLaserWebAcm";
+    public static API_DNS_PARAM = "LordLaserApiDns";
+    public static API_ACM_PARAM = "LordLaserApiAcm";
 };
 
 class InternalConstants {
