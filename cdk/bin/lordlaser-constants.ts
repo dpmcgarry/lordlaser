@@ -4,9 +4,6 @@ export class LordLaserConstants {
     public static GITHUB_REPO = "dpmcgarry/lordlaser";
     public static GITHUB_BRANCH = "main";
 
-    // Set this to the guid of your codestar connection
-    public static CODESTAR_CONNECTION_GUID = "db3ff80d-9284-41fa-8e27-dc4d16975ba6";
-
     // Set this to the public DNS to use for your website
     public static WEB_DNS = "lordlaser.org";
 
@@ -28,14 +25,15 @@ export class LordLaserConstants {
     public static THROTTLE_LAMBDA_NAME = "LordLaserThrottle";
     public static API_LAMBDA_NAME = "LordLaserApi";
     public static THROTTLE_EXEC_NAME = "lordlaser-throttle";
-    public static THROTTLE_ARTIFACT_NAME = "lordlaser-throttle.zip"
-    public static THROTTLE_TABLE_NAME = "lordlaser-throttles"
+    public static THROTTLE_ARTIFACT_NAME = "lordlaser-throttle.zip";
+    public static THROTTLE_TABLE_NAME = "lordlaser-throttles";
+    public static CODESTAR_GUID_PARAM = "GitHubCodeStarGuid";
 };
 
 class InternalConstants {
-    public static ACCT_PLACEHOLDER = "%ACCT%"
-    public static REGION_PLACEHOLDER = "%REGION%"
-    public static GUID_PLACEHOLDER = "%GUID%"
+    public static ACCT_PLACEHOLDER = "%ACCT%";
+    public static REGION_PLACEHOLDER = "%REGION%";
+    public static GUID_PLACEHOLDER = "%GUID%";
     public static CODESTAR_CONNECTION_ARN = "arn:aws:codestar-connections:" + this.REGION_PLACEHOLDER + ":" + this.ACCT_PLACEHOLDER + ":connection/" + this.GUID_PLACEHOLDER;
     public static ACM_CERTIFICATE_ARN = "arn:aws:acm:" + this.REGION_PLACEHOLDER + ":" + this.ACCT_PLACEHOLDER + ":certificate/" + this.GUID_PLACEHOLDER;
 };

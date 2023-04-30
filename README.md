@@ -5,6 +5,7 @@ Crowd sourced good trouble.
 ## Getting Started
 
 1. In order to build this on your own you will need to fork this repo and customize lordlaser-constants.ts - the comments in that file should be fairly self explanatory
+1. Create a SSM Parameter Store String Parameter with the name ```GitHubCodeStarGuid``` and the value of the GUID
 1. This is designed to work with a custom domain name. You can use the built in APIGateway domain with some tweaking but the easy approach is just to get yourself a domain then pick an endpoint for this project (e.g. lordlaser.example.com)
 1. You need one DNS entry for the frontend / website and another for the api.
 1. You'll need to generate ACM certificates for the endpoints you specify in the previous step. If you use Route53 to host your DNS cert validation is pretty easy

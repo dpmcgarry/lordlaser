@@ -17,12 +17,18 @@ export interface LordLaserStackProps extends StackProps {
     readonly messageTableName: string;
     readonly artifactBucketParamName: string;
     readonly uiBucketPrefix: string;
+    readonly codeStarGuidParamName: string;
 }
 
 export class LordLaserStack extends Stack {
     constructor(scope: Construct, id: string, props: LordLaserStackProps) {
         super(scope, id, props);
-        const codestarConnectionARN = GenerateCodestarARN(this.account, this.region, LordLaserConstants.CODESTAR_CONNECTION_GUID);
+
+        const codeStarConnectionGUID = StringParameter.fromStringParameterAttributes(this, 'GitHubCodeStarGuid', {
+            parameterName: props.codeStarGuidParamName,
+        }).stringValue
+
+        const codestarConnectionARN = GenerateCodestarARN(this.account, this.region, codeStarConnectionGUID);
 
         const customArtifactBucket = new Bucket(this, 'LordLaser-ArtifactBucket', {
             encryption: BucketEncryption.S3_MANAGED,

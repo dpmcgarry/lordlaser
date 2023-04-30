@@ -15,5 +15,6 @@ new LordLaserStack(lordlaser, 'LordLaserPipelineStack', {
     messageTableName: LordLaserConstants.MESSAGE_TABLE_NAME,
     artifactBucketParamName: LordLaserConstants.ARTIFACT_BUCKET_PARAM,
     uiBucketPrefix: LordLaserConstants.UI_BUCKET_PREFIX,
+    codeStarGuidParamName: LordLaserConstants.CODESTAR_GUID_PARAM,
     terminationProtection: true
 });
