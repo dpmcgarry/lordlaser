@@ -70,6 +70,9 @@ func throttleMessages(rawMessages []message.CrowdMessage, ddbClient *dynamodb.Cl
 			log.Warn().Msgf("Unknown Throttle Type: %v", throttle.ThrottleType)
 		}
 	}
+	if len(throttles) == 0 {
+		unThrottleMessages = rawMessages
+	}
 
 	log.Info().Msgf("UnThrottle Messages: %v", len(unThrottleMessages))
 	return unThrottleMessages

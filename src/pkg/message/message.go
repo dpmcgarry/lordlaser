@@ -78,8 +78,10 @@ func ParseFromLambdaSMS(records []events.SNSEventRecord) ([]CrowdMessage, error)
 
 func ProcessSMSThrottle(messages []CrowdMessage, throttle ddb.Throttle) ([]CrowdMessage, error) {
 	var unThrottleMessages []CrowdMessage
+	log.Debug().Msgf("Processing SMS Throttle for %v messages", len(messages))
 	for _, msg := range messages {
 		if !slices.Contains(throttle.ThrottleValueList, msg.Source) {
+			log.Debug().Msg("Adding Message")
 			unThrottleMessages = append(unThrottleMessages, msg)
 		} else {
 			log.Warn().Msgf("Throttling Message From Source Number: %v", msg.Source)

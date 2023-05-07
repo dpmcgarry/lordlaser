@@ -1,29 +1,19 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import './App.css';
 import "@cloudscape-design/global-styles/index.css"
-import Header from "@cloudscape-design/components/header";
-import Container from "@cloudscape-design/components/container";
-import SpaceBetween from "@cloudscape-design/components/space-between";
-import Input from "@cloudscape-design/components/input";
-import Button from "@cloudscape-design/components/button";
+import { AppLayout } from '@cloudscape-design/components';
+import { Navigation } from './Navigation';
+import FeedTable from './FeedTable';
 
 function App() {
-    const [value, setValue] = useState("");
+    const appLayout = useRef();
     return (
-        <SpaceBetween size="m">
-      <Header variant="h1">Hello World!</Header>
-
-      <Container>
-        <SpaceBetween size="s">
-          <span>Start editing to see some magic happen</span>
-          <Input
-            value={value}
-            onChange={(event) => setValue(event.detail.value)}
-          />
-          <Button variant="primary">Click me</Button>
-        </SpaceBetween>
-      </Container>
-    </SpaceBetween>
+        <AppLayout
+        contentType="table"
+        content={<FeedTable/>}
+        navigation={<Navigation activeHref="#/distributions" />}
+        toolsHide={true}
+        />
     );
 }
 

@@ -212,9 +212,10 @@ export class LordLaserInfraStack extends Stack {
 
         const apiRoute = api.root.addResource('api');
         apiRoute.addMethod('GET', lambdaIntegration);
-        apiRoute.addMethod('POST', lambdaIntegration);
-        apiRoute.addMethod('PUT', lambdaIntegration);
-        apiRoute.addMethod('DELETE', lambdaIntegration);
+        apiRoute.addProxy({
+            defaultIntegration: lambdaIntegration
+        });
+        
 
         const rssRoute = api.root.addResource('rss');
         rssRoute.addMethod('GET', lambdaIntegration);
