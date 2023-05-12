@@ -122,3 +122,20 @@ func PutMessages(messages []CrowdMessage, ddbClient *dynamodb.Client, tableName 
 
 	return written, nil
 }
+
+func GetMessages(ddbClient *dynamodb.Client, tableName string) ([]CrowdMessage, error) {
+	var messages []CrowdMessage
+	resp, err := ddbClient.Scan(context.TODO(), &dynamodb.ScanInput{
+		TableName: aws.String(tableName),
+	})
+	if err != nil {
+		log.Error().Msgf("Couldn't scan table %v: %v\n", tableName, err)
+		return messages, err
+	}
+	err = attributevalue.UnmarshalListOfMaps(resp.Items, &messages)
+	if err != nil {
+		log.Error().Msgf("Couldn't unmarshal query response. Here's why: %v\n", err)
+		return messages, err
+	}
+	return messages, nil
+}
