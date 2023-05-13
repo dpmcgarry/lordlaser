@@ -1,105 +1,107 @@
 import { Box, Button, Header, Table } from '@cloudscape-design/components';
-import React, { FC } from 'react';
+import { Component, FC } from 'react';
+import ILaserMessage from './types/LaserMessage.type';
+import lasermessagesService from './services/lasermessages.service';
 
-const FeedTable: FC = () => {
-    return (
-        <Table
-            columnDefinitions={[
-                {
-                    id: "msgid",
-                    header: "Message ID",
-                    cell: e => e.msgid,
-                    sortingField: "msgid"
-                },
-                {
-                    id: "srcnum",
-                    header: "Source Number",
-                    cell: e => e.srcnum,
-                    sortingField: "srcnum"
-                },
-                {
-                    id: "status",
-                    header: "Message Status",
-                    cell: e => e.status,
-                    sortingField: "status"
-                },
-                {
-                    id: "msgbody",
-                    header: "Message Body",
-                    cell: e => e.body,
-                    sortingField: "msgbody"
-                },
-                {
-                    id: "msglang",
-                    header: "Language",
-                    cell: e => e.msglang,
-                    sortingField: "msglang"
-                },
-                {
-                    id: "transbody",
-                    header: "Translated Body",
-                    cell: e => e.transbody,
-                    sortingField: "transbody"
-                },
-                {
-                    id: "action",
-                    header: "Action",
-                    cell: e => e.action,
-                },
-            ]}
-            items={[
-                {
-                    msgid: "2b0ad7b8-dd88-5afa-a35f-8b69c749c0fc",
-                    srcnum: "+12028675309",
-                    status: "PENDING",
-                    body: "Foo",
-                    msglang: "en",
-                    transbody: "Foo",
-                    action: <Button variant="primary">Button</Button>
-                },
-                {
-                    msgid: "2b0ad7b8-dd88-5afa-a35f-8b69c749c0fd",
-                    srcnum: "+12028675309",
-                    status: "PENDING",
-                    body: "Bar",
-                    msglang: "en",
-                    transbody: "Bar"
-                },
-                {
-                    msgid: "2b0ad7b8-dd88-5afa-a35f-8b69c749c0fe",
-                    srcnum: "+12028675309",
-                    status: "PENDING",
-                    body: "Baz",
-                    msglang: "en",
-                    transbody: "Baz"
-                },
-                {
-                    msgid: "2b0ad7b8-dd88-5afa-a35f-8b69c749c0ff",
-                    srcnum: "+12028675309",
-                    status: "PENDING",
-                    body: "Poo",
-                    msglang: "en",
-                    transbody: "Poo"
-                },
-            ]}
-            loadingText="Loading resources"
-            variant="embedded"
-            empty={
-                <Box textAlign="center" color="inherit">
-                    <b>No resources</b>
-                    <Box
-                        padding={{ bottom: "s" }}
-                        variant="p"
-                        color="inherit"
-                    >
-                        No resources to display.
-                    </Box>
-                    <Button>Create resource</Button>
-                </Box>
-            }
-            header={<Header> Current Messages </Header>}
-        />
-    );
+type Props = {};
+
+type State = {
+  messages: Array<ILaserMessage>,
 };
 
-export default FeedTable;
+export default class FeedTable extends Component<Props, State>{
+    interval:any;
+    constructor(props:Props){
+        super(props);
+        this.getMessages = this.getMessages.bind(this);
+
+        this.state = {
+            messages: []
+        };
+        this.interval = null;
+    }
+
+    componentDidMount(): void {
+        this.getMessages();
+        this.interval = setInterval(this.getMessages, 5000);
+    }
+
+    componentWillMount(): void {
+        
+        clearInterval(this.interval);
+    }
+
+    getMessages(){
+        lasermessagesService.getAll()
+            .then((response: any) => {
+                this.setState({
+                    messages: response.data
+                });
+                console.log(response.data);
+            })
+            .catch((e: Error) => {
+                console.log(e);
+            });
+    }
+
+    render(){
+        const { messages } = this.state;
+        return (
+            <Table
+                columnDefinitions={[
+                    {
+                        id: "Received",
+                        header: "Received",
+                        cell: e => e.Received,
+                        sortingField: "Received"
+                    },
+                    {
+                        id: "Source",
+                        header: "Source Number",
+                        cell: e => e.Source,
+                        sortingField: "Source"
+                    },
+                    {
+                        id: "Status",
+                        header: "Message Status",
+                        cell: e => e.Status,
+                        sortingField: "Status"
+                    },
+                    {
+                        id: "Body",
+                        header: "Message Body",
+                        cell: e => e.Body,
+                        sortingField: "Body"
+                    },
+                    {
+                        id: "Language",
+                        header: "Language",
+                        cell: e => e.Language,
+                        sortingField: "Language"
+                    },
+                    {
+                        id: "TranslatedBody",
+                        header: "Translated Body",
+                        cell: e => e.TranslatedBody,
+                        sortingField: "TranslatedBody"
+                    },
+                ]}
+                items={messages}
+                loadingText="Loading messages"
+                variant="embedded"
+                empty={
+                    <Box textAlign="center" color="inherit">
+                        <Box
+                            padding={{ bottom: "s" }}
+                            variant="p"
+                            color="inherit"
+                        >
+                            No messages to display.
+                        </Box>
+                    </Box>
+                }
+                header={<Header> Current Messages </Header>}
+            />
+        );
+    }
+}

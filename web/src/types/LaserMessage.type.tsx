@@ -7,4 +7,5 @@ export default interface ILaserMessage {
     Body: string,
     Language: string,
     TranslatedBody: string,
+    Received: string,
 }

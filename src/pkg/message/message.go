@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -39,6 +40,7 @@ type CrowdMessage struct {
 	Language       string        `dynamodbav:"language"`
 	TranslatedBody string        `dynamodbav:"translatedBody"`
 	Status         MessageStatus `dynamodbav:"messageStatus"`
+	Received       string        `dynamodbav:"received"`
 }
 
 func ParseFromLambdaSMS(records []events.SNSEventRecord) ([]CrowdMessage, error) {
@@ -71,6 +73,7 @@ func ParseFromLambdaSMS(records []events.SNSEventRecord) ([]CrowdMessage, error)
 		}
 		message.ID = record.SNS.MessageID
 		message.Status = Pending
+		message.Received = time.Now().UTC().Format("2006-01-02 15:04:05Z")
 		messages = append(messages, message)
 	}
 	return messages, nil
