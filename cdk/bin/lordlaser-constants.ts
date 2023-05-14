@@ -4,12 +4,6 @@ export class LordLaserConstants {
     public static GITHUB_REPO = "dpmcgarry/lordlaser";
     public static GITHUB_BRANCH = "main";
 
-    // Set this to the public DNS to use for your api
-    // public static API_DNS = "api.lordlaser.org";
-
-    // Set this to the guid of the ACM cert for your api DNS
-    // public static API_ACM_CERTIFICATE_GUID = "49410fb0-e8e7-4aa4-854f-941c2d00ed58";
-
     // You shouldn't need to change these values to fork this repo
     public static API_EXEC_NAME = "lordlaser-api";
     public static API_ARTIFACT_NAME = "lordlaser-api.zip"

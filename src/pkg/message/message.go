@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/dpmcgarry/lordlaser/pkg/ddb"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/exp/slices"
@@ -41,6 +43,15 @@ type CrowdMessage struct {
 	TranslatedBody string        `dynamodbav:"translatedBody"`
 	Status         MessageStatus `dynamodbav:"messageStatus"`
 	Received       string        `dynamodbav:"received"`
+}
+
+func (msg CrowdMessage) GetKey() map[string]types.AttributeValue {
+	id, err := attributevalue.Marshal(msg.ID)
+	if err != nil {
+		log.Error().Err(err).Msg("Error marshalling ID")
+		os.Exit(1)
+	}
+	return map[string]types.AttributeValue{"messageId": id}
 }
 
 func ParseFromLambdaSMS(records []events.SNSEventRecord) ([]CrowdMessage, error) {
@@ -141,4 +152,27 @@ func GetMessages(ddbClient *dynamodb.Client, tableName string) ([]CrowdMessage, 
 		return messages, err
 	}
 	return messages, nil
+}
+
+func GetMessage(ddbClient *dynamodb.Client, tableName, id string) (CrowdMessage, error) {
+	var message CrowdMessage
+	ddbid, err := attributevalue.Marshal(id)
+	if err != nil {
+		log.Error().Err(err).Msg("Error marshalling ID")
+		os.Exit(1)
+	}
+	resp, err := ddbClient.GetItem(context.TODO(), &dynamodb.GetItemInput{
+		TableName: aws.String(tableName),
+		Key:       map[string]types.AttributeValue{"messageId": ddbid},
+	})
+	if err != nil {
+		log.Error().Msgf("Couldn't get item %v: %v\n", id, err)
+		return CrowdMessage{}, err
+	}
+	err = attributevalue.UnmarshalMap(resp.Item, &message)
+	if err != nil {
+		log.Error().Msgf("Couldn't unmarshal query response. Here's why: %v\n", err)
+		return message, err
+	}
+	return message, nil
 }

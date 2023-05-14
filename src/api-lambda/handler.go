@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -37,6 +39,12 @@ func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 	log.Info().Msgf("Event: %v", request)
 	log.Info().Msgf("HTTP Method: %v", request.HTTPMethod)
 	log.Info().Interface("req", request).Send()
+	msgR, err := regexp.Compile("messages/[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$")
+	log.Info().Msg("Regex Created")
+	if err != nil {
+		log.Error().Msgf("Error creating regex: %v", err)
+		os.Exit(1)
+	}
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		log.Fatal().Msgf("unable to get SDK config: %v", err)
@@ -45,39 +53,41 @@ func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 	log.Debug().Msg("DynamoDB Client Created")
 	msgTableName := ddbSetup(ddbClient)
 	if request.Resource == "/api" {
-		log.Info().Msg("Base API")
-		respStruct := genericResponse{
-			Path: "Base API",
-		}
-		b, err := json.Marshal(respStruct)
-		if err != nil {
-			log.Error().Msgf("Error marshalling: %v", err)
-			os.Exit(1)
-		}
-		resp = events.APIGatewayProxyResponse{
-			StatusCode: 200,
-			Body:       string(b),
-		}
+		resp = baseGET()
 	} else if request.Resource == "/api/{proxy+}" {
 		log.Info().Msg("Proxy API")
 		proxyParam := request.PathParameters["proxy"]
 		log.Info().Msgf("Proxy Param: %v", proxyParam)
 		if strings.EqualFold("messages", proxyParam) {
-			log.Info().Msg("Messages API")
-			messages, err := message.GetMessages(ddbClient, msgTableName)
-			if err != nil {
-				log.Error().Msgf("Error getting messages: %v", err)
-				os.Exit(1)
-			}
-			log.Info().Interface("messages", messages).Send()
-			b, err = json.Marshal(messages)
-			if err != nil {
-				log.Error().Msgf("Error marshalling: %v", err)
-				os.Exit(1)
-			}
-			resp = events.APIGatewayProxyResponse{
-				StatusCode: 200,
-				Body:       string(b),
+			log.Info().Msg("Messages GET API")
+			resp = messagesGET(ddbClient, msgTableName)
+		} else if msgR.MatchString(proxyParam) {
+			log.Info().Msg("Message API")
+			msgID := strings.Split(proxyParam, "/")[1]
+			switch request.HTTPMethod {
+			case "GET":
+				resp = messageGET(ddbClient, msgTableName, msgID)
+			case "PUT":
+				var b []byte
+				if request.IsBase64Encoded {
+					log.Info().Msg("Base64 Encoded")
+					b, err = base64.StdEncoding.DecodeString(request.Body)
+					if err != nil {
+						log.Error().Msgf("Error decoding Base64: %v", err)
+						os.Exit(1)
+					}
+				} else {
+					log.Info().Msg("Not Base64 Encoded")
+					b = []byte(request.Body)
+				}
+
+				var msg message.CrowdMessage
+				err := json.Unmarshal(b, &msg)
+				if err != nil {
+					log.Error().Msgf("Error unmarshalling PUT Body: %v", err)
+					os.Exit(1)
+				}
+				resp = messagePUT(ddbClient, msgTableName, msg)
 			}
 		}
 	}

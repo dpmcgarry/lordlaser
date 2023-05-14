@@ -205,6 +205,7 @@ export class LordLaserInfraStack extends Stack {
             },
             cloudWatchRole: true,
             minCompressionSize: Size.bytes(500),
+            binaryMediaTypes: [],
         });
 
         const lambdaIntegration = new LambdaIntegration(apiFunction);

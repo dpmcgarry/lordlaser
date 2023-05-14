@@ -1,4 +1,4 @@
-import { Box, Button, Header, Table } from '@cloudscape-design/components';
+import { Box, Button, Header, SpaceBetween, Table } from '@cloudscape-design/components';
 import { Component, FC } from 'react';
 import ILaserMessage from './types/LaserMessage.type';
 import lasermessagesService from './services/lasermessages.service';
@@ -6,12 +6,12 @@ import lasermessagesService from './services/lasermessages.service';
 type Props = {};
 
 type State = {
-  messages: Array<ILaserMessage>,
+    messages: Array<ILaserMessage>,
 };
 
 export default class FeedTable extends Component<Props, State>{
-    interval:any;
-    constructor(props:Props){
+    interval: any;
+    constructor(props: Props) {
         super(props);
         this.getMessages = this.getMessages.bind(this);
 
@@ -23,15 +23,14 @@ export default class FeedTable extends Component<Props, State>{
 
     componentDidMount(): void {
         this.getMessages();
-        this.interval = setInterval(this.getMessages, 5000);
+        // this.interval = setInterval(this.getMessages, 5000);
     }
 
-    componentWillMount(): void {
-        
-        clearInterval(this.interval);
+    componentWillUnmount(): void {
+        // clearInterval(this.interval);
     }
 
-    getMessages(){
+    getMessages() {
         lasermessagesService.getAll()
             .then((response: any) => {
                 this.setState({
@@ -44,7 +43,33 @@ export default class FeedTable extends Component<Props, State>{
             });
     }
 
-    render(){
+    updateMessage(message: ILaserMessage, status: string) {
+        console.log("Publishing message: " + message.ID);
+        message.Status = status;
+        lasermessagesService.update(message, message.ID)
+            .then((response: any) => {
+                console.log(response);
+                this.getMessages();
+            })
+            .catch((e: Error) => {
+                console.log(e);
+            })
+    }
+
+
+    getPublishAction(message: ILaserMessage) {
+        if (message.Status === "PENDING") {
+            return <Button onClick={() => this.updateMessage(message, "POSTED")}>Publish</Button>;
+        } else if (message.Status === "POSTED") {
+            return <Button onClick={() => this.updateMessage(message, "PENDING")}>Remove</Button>;
+        }
+        else {
+            return <Button disabled>Published</Button>;
+        }
+
+    }
+
+    render() {
         const { messages } = this.state;
         return (
             <Table
@@ -85,10 +110,26 @@ export default class FeedTable extends Component<Props, State>{
                         cell: e => e.TranslatedBody,
                         sortingField: "TranslatedBody"
                     },
+                    {
+                        id: "Publish",
+                        header: "Publish",
+                        cell: e => e.PubAction,
+                        sortingField: "Publish"
+                    },
                 ]}
-                items={messages}
+                items={messages.map((message: ILaserMessage) => ({
+                    Received: message.Received,
+                    Source: message.Source,
+                    Status: message.Status,
+                    Body: message.Body,
+                    Language: message.Language,
+                    TranslatedBody: message.TranslatedBody,
+                    PubAction: this.getPublishAction(message)
+                }))}
                 loadingText="Loading messages"
-                variant="embedded"
+                variant="full-page"
+                sortingDisabled
+                stripedRows
                 empty={
                     <Box textAlign="center" color="inherit">
                         <Box
@@ -100,7 +141,15 @@ export default class FeedTable extends Component<Props, State>{
                         </Box>
                     </Box>
                 }
-                header={<Header> Current Messages </Header>}
+                header={<Header
+                    actions={
+                        <SpaceBetween
+                            direction="horizontal"
+                            size="xs">
+                            <Button variant='icon' iconName='refresh' onClick={this.getMessages}></Button>
+                        </SpaceBetween>
+                    }
+                > Manage Feed </Header>}
             />
         );
     }
