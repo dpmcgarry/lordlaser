@@ -1,5 +1,5 @@
 import { Box, Button, Header, SpaceBetween, Table } from '@cloudscape-design/components';
-import { Component, FC } from 'react';
+import { Component } from 'react';
 import ILaserMessage from './types/LaserMessage.type';
 import lasermessagesService from './services/lasermessages.service';
 

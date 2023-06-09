@@ -14,8 +14,10 @@ import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import { CognitoUserPoolsAuthorizer, EndpointType, LambdaIntegration, RestApi, SecurityPolicy } from "aws-cdk-lib/aws-apigateway";
 import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
 import { UserPool } from "aws-cdk-lib/aws-cognito";
-import { CloudFrontAllowedMethods, CloudFrontWebDistribution, HttpVersion, OriginAccessIdentity,
-    OriginProtocolPolicy, SecurityPolicyProtocol, SourceConfiguration, ViewerCertificate } from "aws-cdk-lib/aws-cloudfront";
+import {
+    CloudFrontAllowedMethods, CloudFrontWebDistribution, HttpVersion, OriginAccessIdentity,
+    OriginProtocolPolicy, SecurityPolicyProtocol, SourceConfiguration, ViewerCertificate
+} from "aws-cdk-lib/aws-cloudfront";
 import { GenerateACMCertificateARN } from "../bin/lordlaser-constants";
 
 export interface InfraStackProps extends StackProps {
@@ -187,8 +189,24 @@ export class LordLaserInfraStack extends Stack {
         messageTable.grantReadWriteData(apiFunction);
         throttleTable.grantReadWriteData(apiFunction);
 
-        const userPool = new UserPool(this, 'LordLaserUserPool', {
-            userPoolName: 'LordLaserUserPoool'
+        const laserUserPool = new UserPool(this, 'LordLaserPool', {
+            userPoolName: 'LordLaserPool'
+        });
+
+        laserUserPool.addClient('ReactClient', {
+            authFlows: {
+                userSrp: true
+            },
+            oAuth: {
+                callbackUrls: ['https://' + webDomain]
+            },
+
+        });
+
+        laserUserPool.addDomain('LordLaserCognitoDomain', {
+            cognitoDomain: {
+                domainPrefix: 'lordlaser'
+            }
         });
 
         // const apiAuth = new CognitoUserPoolsAuthorizer(this, 'APIAuthorizer', {
@@ -215,7 +233,7 @@ export class LordLaserInfraStack extends Stack {
         apiRoute.addProxy({
             defaultIntegration: lambdaIntegration
         });
-        
+
 
         const rssRoute = api.root.addResource('rss');
         rssRoute.addMethod('GET', lambdaIntegration);
@@ -235,10 +253,10 @@ export class LordLaserInfraStack extends Stack {
 
         // The origin configuration for our S3 bucket hosting the UI
         const s3OriginConfig: SourceConfiguration = {
-            s3OriginSource: { 
+            s3OriginSource: {
                 s3BucketSource: lambdaArtifactBucket,
                 originPath: '/' + props.uiBucketPrefix,
-                originAccessIdentity 
+                originAccessIdentity
             },
             behaviors: [{
                 isDefaultBehavior: true,
